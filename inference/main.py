@@ -148,6 +148,14 @@ def parse_args():
         default="references.json",
         help="Path for saving the reference solutions/tests",
     )
+
+    parser.add_argument(
+        "--backend",
+        type=str,
+        default="vllm",
+        help="Load the model using vllm or gptqmodel",
+    )
+
     args = parser.parse_args()
 
     precision_map = {
@@ -185,13 +193,30 @@ def main():
     transformers.logging.set_verbosity_error()
     datasets.logging.set_verbosity_error()
 
-    model = LLM(
-        model=args.model, 
-        dtype=args.precision, 
-        trust_remote_code=args.trust_remote_code, 
-        gpu_memory_utilization=0.98,
-        tensor_parallel_size=args.tensor_parallel_size,
-    )
+    if args.backend == 'gptqmodel':
+        try:
+            from gptqmodel import GPTQModel
+        except ModuleNotFoundError as exception:
+            raise type(exception)(
+                "Tried to load gptqmodel, but gptqmodel is not installed ",
+                "please install gptqmodel via `pip install gptqmodel --no-build-isolation`",
+            )
+
+        kwargs = {
+            "model_id_or_path": args.model,
+            "trust_remote_code": args.trust_remote_code,
+            "dtype": args.precision
+        }
+        model = GPTQModel.load(**kwargs)
+    else:
+        model = LLM(
+            model=args.model,
+            dtype=args.precision,
+            trust_remote_code=args.trust_remote_code,
+            gpu_memory_utilization=0.98,
+            tensor_parallel_size=args.tensor_parallel_size,
+        )
+
 
     tokenizer = AutoTokenizer.from_pretrained(
         args.model,
