@@ -76,7 +76,8 @@ def complete_code(
     n_tasks,
     prefix="",
     postprocess=True,
-    backend='vllm'
+    backend='vllm',
+    tokenizer=None,
 ):
     max_length_generation = sampling_params.max_tokens
     code_gens = defaultdict(list)
@@ -96,15 +97,26 @@ def complete_code(
 
         if backend == 'gptqmodel':
             outputs = model.generate(
-                input_ids=inputs
+                input_ids=inputs,
+                max_new_tokens=sampling_params.max_tokens,
+                temperature=sampling_params.temperature,
+                top_p=sampling_params.top_p,
+                top_k=sampling_params.top_k
             )
+
+            generated_texts = tokenizer.batch_decode(
+                outputs[:, inputs.size(-1):],
+                skip_special_tokens=True,
+            )
+
+            raise ValueError("")
         else:
             outputs = model.generate(
                 prompt_token_ids=inputs, sampling_params=sampling_params, use_tqdm=False
             )
+            generated_tasks = batch["row_index"].repeat(batch_size)
+            generated_texts = [o.text for o in outputs[0].outputs]
 
-        generated_tasks = batch["row_index"].repeat(batch_size)
-        generated_texts = [o.text for o in outputs[0].outputs]
         combined_texts = [
             batch["prompt"][0] + generated_text for generated_text in generated_texts
         ]

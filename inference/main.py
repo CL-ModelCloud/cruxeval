@@ -153,7 +153,7 @@ def parse_args():
         "--backend",
         type=str,
         default="vllm",
-        help="Load the model using vllm or gptqmodel",
+        help="Load Model on (default: `vllm`). Use `gptqmodel` for gptq quantized models.",
     )
 
     args = parser.parse_args()
@@ -205,7 +205,7 @@ def main():
         kwargs = {
             "model_id_or_path": args.model,
             "trust_remote_code": args.trust_remote_code,
-            "dtype": args.precision
+            "torch_dtype": args.precision
         }
         model = GPTQModel.load(**kwargs)
     else:
