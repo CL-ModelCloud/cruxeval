@@ -96,15 +96,19 @@ def complete_code(
         sampling_params.max_tokens = max_length_generation - num_tokens
 
         generated_tasks = batch["row_index"].repeat(batch_size)
-        if backend == 'gptqmodel':
-            inputs_tensor = torch.tensor(inputs, dtype=torch.long).to(model.device)
-
+        if backend == 'vllm':
+            outputs = model.generate(
+                prompt_token_ids=inputs, sampling_params=sampling_params, use_tqdm=False
+            )
+            generated_texts = [o.text for o in outputs[0].outputs]
+        elif backend == 'gptqmodel':
+            inputs_tensor = torch.tensor(inputs).to(model.device)
             model_kwargs = {
                 "input_ids": inputs_tensor,
                 "max_new_tokens": sampling_params.max_tokens,
                 "num_return_sequences": sampling_params.n,
                 "stop_strings": sampling_params.stop,
-                "tokenizer": tokenizer
+                "tokenizer": tokenizer,
             }
 
             do_sample = True if sampling_params.temperature != 1.0 else False
@@ -124,11 +128,10 @@ def complete_code(
                 outputs[:, inputs_tensor.size(-1):],
                 skip_special_tokens=True,
             )
+            for stop_string in sampling_params.stop:
+                generated_texts = [generated_text.replace(stop_string, "") for generated_text in generated_texts]
         else:
-            outputs = model.generate(
-                prompt_token_ids=inputs, sampling_params=sampling_params, use_tqdm=False
-            )
-            generated_texts = [o.text for o in outputs[0].outputs]
+            raise ValueError("backend support: [vllm, gptqmodel]")
 
         combined_texts = [
             batch["prompt"][0] + generated_text for generated_text in generated_texts

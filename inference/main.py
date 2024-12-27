@@ -193,7 +193,15 @@ def main():
     transformers.logging.set_verbosity_error()
     datasets.logging.set_verbosity_error()
 
-    if args.backend == 'gptqmodel':
+    if args.backend == 'vllm':
+        model = LLM(
+            model=args.model,
+            dtype=args.precision,
+            trust_remote_code=args.trust_remote_code,
+            gpu_memory_utilization=0.98,
+            tensor_parallel_size=args.tensor_parallel_size,
+        )
+    elif args.backend == 'gptqmodel':
         try:
             from gptqmodel import GPTQModel
         except ModuleNotFoundError as exception:
@@ -209,13 +217,7 @@ def main():
         }
         model = GPTQModel.load(**kwargs)
     else:
-        model = LLM(
-            model=args.model,
-            dtype=args.precision,
-            trust_remote_code=args.trust_remote_code,
-            gpu_memory_utilization=0.98,
-            tensor_parallel_size=args.tensor_parallel_size,
-        )
+        raise ValueError("backend support: [vllm, gptqmodel]")
 
 
     tokenizer = AutoTokenizer.from_pretrained(
