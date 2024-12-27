@@ -102,7 +102,9 @@ def complete_code(
             model_kwargs = {
                 "input_ids": inputs_tensor,
                 "max_new_tokens": sampling_params.max_tokens,
-                "num_return_sequences": sampling_params.n
+                "num_return_sequences": sampling_params.n,
+                "stop_strings": sampling_params.stop,
+                "tokenizer": tokenizer
             }
 
             do_sample = True if sampling_params.temperature != 1.0 else False
