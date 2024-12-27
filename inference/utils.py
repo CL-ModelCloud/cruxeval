@@ -109,9 +109,12 @@ def complete_code(
                 "num_return_sequences": sampling_params.n,
             }
 
+            # normalize stop_strings
             if sampling_params.stop is not None:
                 if isinstance(sampling_params.stop, str):
                     sampling_params.stop = [sampling_params.stop]
+
+                # transformer require tokenizer to be passed when stop_strings is used
                 model_kwargs["stop_strings"] = sampling_params.stop
                 model_kwargs["tokenizer"] = tokenizer
 
@@ -133,6 +136,7 @@ def complete_code(
                 skip_special_tokens=True,
             )
 
+            # transformers will inlcude stop_string in output, normalize (strip) to align with vllm default
             if sampling_params.stop is not None:
                 for stop_string in sampling_params.stop:
                     generated_texts = [generated_text.replace(stop_string, "") for generated_text in generated_texts]
