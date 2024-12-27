@@ -110,6 +110,8 @@ def complete_code(
             }
 
             if sampling_params.stop is not None:
+                if isinstance(sampling_params.stop, str):
+                    sampling_params.stop = [sampling_params.stop]
                 model_kwargs["stop_strings"] = sampling_params.stop
                 model_kwargs["tokenizer"] = tokenizer
 
@@ -132,8 +134,6 @@ def complete_code(
             )
 
             if sampling_params.stop is not None:
-                if isinstance(sampling_params.stop, str):
-                    sampling_params.stop = [sampling_params.stop]
                 for stop_string in sampling_params.stop:
                     generated_texts = [generated_text.replace(stop_string, "") for generated_text in generated_texts]
         else:
