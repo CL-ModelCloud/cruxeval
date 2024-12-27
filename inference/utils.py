@@ -107,9 +107,11 @@ def complete_code(
                 "input_ids": inputs_tensor,
                 "max_new_tokens": sampling_params.max_tokens,
                 "num_return_sequences": sampling_params.n,
-                "stop_strings": sampling_params.stop,
-                "tokenizer": tokenizer,
             }
+
+            if sampling_params.stop is not None:
+                model_kwargs["stop_strings"] = sampling_params.stop
+                model_kwargs["tokenizer"] = tokenizer
 
             do_sample = True if sampling_params.temperature != 1.0 else False
 
@@ -128,8 +130,12 @@ def complete_code(
                 outputs[:, inputs_tensor.size(-1):],
                 skip_special_tokens=True,
             )
-            for stop_string in sampling_params.stop:
-                generated_texts = [generated_text.replace(stop_string, "") for generated_text in generated_texts]
+
+            if sampling_params.stop is not None:
+                if isinstance(sampling_params.stop, str):
+                    sampling_params.stop = [sampling_params.stop]
+                for stop_string in sampling_params.stop:
+                    generated_texts = [generated_text.replace(stop_string, "") for generated_text in generated_texts]
         else:
             raise ValueError("backend support: [vllm, gptqmodel]")
 
